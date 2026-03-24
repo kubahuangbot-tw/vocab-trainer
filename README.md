@@ -1,70 +1,174 @@
-# VocabTrainer - 英文單字訓練系統
+# VocabTrainer - 多人單字測驗系統
 
-智慧型 Spaced Repetition 單字學習工具，自動根據你的錯誤調整學習重點。
+## 專案簡介
 
-## 功能特點
+VocabTrainer 是一個基於 Streamlit 的多人英文單字測驗系統，支援：
+- SQLite 資料庫
+- 多用戶學習進度追蹤
+- AI 驅動的程度估算演算法
+- 兒童友善內容過濾
 
-✅ **智慧選題** - 根據錯誤頻率自動調整權重  
-✅ **多種模式** - 隨機/弱點複習/混合訓練  
-✅ **錯誤記錄** - 詳細記錄錯誤並提供例句  
-✅ **進度追蹤** - CSV 長期保存學習數據  
-✅ **即時回饋** - 顯示正確答案與用法說明
+## 功能列表
 
-## 安裝
+### 核心功能
+- 用戶登入系統 (含管理員/訪客)
+- 單字測驗 (選擇題模式)
+- 學習進度追蹤
+- 程度分析報告
+- 新增單字 (自動翻譯)
+
+### 程度演算法 (AI)
+```python
+# Laplace Smoothing + 平方根加權
+final_score = Σ(adj_p × √n_i × level) / Σ(adj_p × √n_i)
+adj_p = (c_i + K×0.7) / (n_i + K)
+K = 5
+```
+
+### 資料庫結構 (SQLite)
+
+```
+vocab.db
+├── words          # 單字庫 (10,618 個)
+├── users          # 用戶
+├── user_progress  # 學習進度
+├── error_details  # 錯誤日誌
+├── user_preferences  # 用戶偏好
+└── word_sets     # 單字集
+```
+
+## 開發環境
+
+### 本地開發
 
 ```bash
-cd /home/deck/study/vocab_trainer
+# 1. 複製專案
+cd ~/study
+git clone https://github.com/kubahuangbot-tw/vocab-trainer.git
+cd vocab-trainer
+
+# 2. 建立虛擬環境 (可選)
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. 安裝依賴
+pip install streamlit pandas gtts
+
+# 4. 執行
+streamlit run app_login.py --server.port 8501
 ```
 
-## 使用方法
+### 測試
+```bash
+python3 -m unittest test_vocab -v
+```
 
-| 命令 | 說明 |
+## 部署到 Synology NAS
+
+### 1. 準備 Docker
+
+在 NAS 上安裝 **Container Manager** (Docker)
+
+### 2. 建立資料夾
+```
+/volume1/botfoler/vocabtrainer/
+├── app/          # 程式碼
+│   ├── app_login.py
+│   ├── trainer.py
+│   ├── storage_sqlite.py
+│   ├── users.py
+│   └── ...
+└── data/         # 資料庫
+    └── vocab.db
+```
+
+### 3. 上傳檔案
+
+```bash
+# SSH 連線
+ssh -i ~/.ssh/nas_key kubabot@192.168.1.109
+
+# 建立資料夾
+mkdir -p /volume1/botfoler/vocabtrainer/app
+mkdir -p /volume1/botfoler/vocabtrainer/data
+
+# 上傳檔案 (從本電腦)
+scp -i ~/.ssh/nas_key -r ./* kubabot@192.168.1.109:/volume1/botfoler/vocabtrainer/app/
+```
+
+### 4. 建立 docker-compose.yml
+
+```yaml
+version: '3'
+services:
+  vocabtrainer:
+    image: python:3.11-slim
+    container_name: vocabtrainer
+    restart: always
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../data:/app/data
+      - .:/app
+    working_dir: /app
+    command: >
+      bash -c "pip install streamlit pandas gtts && streamlit run app_login.py --server.port 8501 --server.address 0.0.0.0"
+```
+
+### 5. 啟動容器
+
+DSM → Container Manager → 建立專案
+- 名稱: vocabtrainer
+- 路徑: /volume1/botfoler/vocabtrainer/app
+
+### 6. 存取
+
+- 內網: http://192.168.1.109:8501
+- 外網: https://your-domain.synology.me (需設定反向代理)
+
+## 主要檔案說明
+
+| 檔案 | 功能 |
 |------|------|
-| `python main.py train` | 混合模式訓練 (預設) |
-| `python main.py train random` | 完全隨機抽考 |
-| `python main.py train weak` | 優先測驗弱點單字 |
-| `python main.py quiz 5` | 快速測驗 5 題 |
-| `python main.py review` | 複習錯誤單字 |
-| `python main.py stats` | 查看學習統計 |
-| `python main.py list` | 列出單字庫 |
+| app_login.py | Streamlit 主程式 |
+| trainer.py | 單字訓練邏輯 |
+| storage_sqlite.py | SQLite 儲存模組 |
+| users.py | 用戶驗證 |
+| test_vocab.py | 單元測試 |
+| words.json | 原始單字庫 |
 
-## 資料檔案
+## 常用指令
 
-```
-data/
-├── progress.csv     # 學習進度 (單字權重)
-└── wrong_words.csv  # 錯誤記錄 (長期dataset)
-```
-
-## 演算法設計
-
-### Spaced Repetition 權重計算
+### 更新單字庫
 ```python
-# 正確時: weight = weight * 0.8 (降低)
-# 錯誤時: weight = weight * 2 + 1 (提高)
+from storage_sqlite import import_words_from_json
+import_words_from_json('words.json')
 ```
 
-### 選題策略
-- **Random**: 完全隨機
-- **Weak**: 錯誤次數最多的優先
-- **Mixed**: 70% 弱點 + 30% 新單字
-
-## 擴充單字
-
-在 `word_list.py` 中添加新單字：
+### 新增用戶
 ```python
-"單字": {"meaning": "中文", "level": 1-5}
+from storage_sqlite import create_user
+create_user('username', 'password', '顯示名稱')
 ```
 
-在 `example_sentences.py` 中添加例句：
+### 查詢用戶進度
 ```python
-"單字": "Example sentence here."
+from storage_sqlite import get_user, get_user_progress
+user = get_user('kuba')
+progress = get_user_progress(user['id'])
 ```
 
-## 未來規劃
+## 外部依賴
 
-- [ ] Web 介面 (Streamlit/Flask)
-- [ ] 匯入更多單字 (5000字庫)
-- [ ] 每日複習提醒
-- [ ] 統計圖表
-- [ ] API 串接 (Google Sheets 同步)
+- Streamlit
+- Pandas
+- gTTS (發音)
+- SQLite (內建)
+
+## GitHub
+
+https://github.com/kubahuangbot-tw/vocab-trainer
+
+## 授權
+
+MIT
