@@ -32,7 +32,16 @@ DIFFICULTY_LEVELS = {
 class VocabTrainer:
     """單字訓練器"""
     
-    def __init__(self):
+    def __init__(self, user_id=None):
+        # 嘗試使用 SQLite，失敗則回退到 CSV
+        try:
+            import storage_sqlite as sqlite_storage
+            self.use_sqlite = True
+            self.sqlite_storage = sqlite_storage
+            self.user_id = user_id
+        except:
+            self.use_sqlite = False
+        
         self.storage = Storage()
         self.current_words = []
         self.current_index = 0
@@ -87,26 +96,39 @@ class VocabTrainer:
                 words = random.sample(available_words, min(count, len(available_words)))
         
         elif mode == "weak":
-            weak_words = self.storage.get_weak_words(count * 2)
-            weak_filtered = [w for w in weak_words if w[0] in available_words]
+            # 嘗試從 SQLite 取得弱點單字
+            if self.use_sqlite and self.user_id:
+                weak_words = self.sqlite_storage.get_weak_words(self.user_id, count * 2)
+                # SQLite 回傳格式: [(word, {meaning: ...}), ...]
+                weak_words_list = [w[0] for w in weak_words if w[0] in available_words]
+            else:
+                weak_words = self.storage.get_weak_words(count * 2)
+                weak_words_list = [w[0] for w in weak_words if w[0] in available_words]
             
-            if len(weak_filtered) < count:
-                existing = set(w[0] for w in weak_filtered)
-                remaining = [w for w in available_words if w not in existing]
-                words = [w[0] for w in weak_filtered] + random.sample(remaining, count - len(weak_filtered))
+            if len(weak_words_list) < count:
+                remaining = [w for w in available_words if w not in weak_words_list]
+                words = weak_words_list + random.sample(remaining, count - len(weak_words_list))
                 words = words[:count]
             else:
-                words = [w[0] for w in weak_filtered[:count]]
+                words = weak_words_list[:count]
         
         else:  # mixed - 使用自訂比例
             weak_count = int(count * review_ratio)
             new_count = count - weak_count
             
-            weak_words = self.storage.get_weak_words(weak_count * 2)
-            weak_filtered = [w for w in weak_words if w[0] in available_words]
-            weak_list = [w[0] for w in weak_filtered[:weak_count]]
+            # 取得弱點單字
+            if self.use_sqlite and self.user_id:
+                weak_words = self.sqlite_storage.get_weak_words(self.user_id, weak_count * 2)
+                weak_list = [w[0] for w in weak_words if w[0] in available_words][:weak_count]
+                
+                # 從 SQLite 取得已學習的單字
+                user_progress = self.sqlite_storage.get_user_progress(self.user_id)
+                learned = set(user_progress.keys())
+            else:
+                weak_words = self.storage.get_weak_words(weak_count * 2)
+                weak_list = [w[0] for w in weak_words if w[0] in available_words][:weak_count]
+                learned = set(progress.keys())
             
-            learned = set(progress.keys())
             remaining = [w for w in available_words if w not in learned]
             new_words = random.sample(remaining, min(new_count, len(remaining)))
             
