@@ -160,3 +160,52 @@ class TestTranslateFunction(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class TestProgressDataStructure(unittest.TestCase):
+    """測試進度資料結構"""
+    
+    def test_get_user_progress_structure(self):
+        """測試 get_user_progress 回傳的資料結構"""
+        from storage_sqlite import get_user, get_user_progress
+        
+        user = get_user('kuba')
+        if not user:
+            self.skipTest("沒有 kuba 用戶")
+        
+        progress = get_user_progress(user['id'])
+        
+        # 應該是 dict
+        self.assertIsInstance(progress, dict)
+        
+        # 如果有資料，檢查結構
+        if progress:
+            word, data = list(progress.items())[0]
+            # key 應該是 word (string)
+            self.assertIsInstance(word, str)
+            # value 應該是 dict
+            self.assertIsInstance(data, dict)
+            # 應該有這些 key
+            self.assertIn('correct_count', data)
+            self.assertIn('error_count', data)
+            self.assertIn('meaning', data)
+    
+    def test_iterate_progress(self):
+        """測試正確迭代 progress"""
+        from storage_sqlite import get_user, get_user_progress
+        
+        user = get_user('kuba')
+        if not user:
+            self.skipTest("沒有 kuba 用戶")
+        
+        progress = get_user_progress(user['id'])
+        
+        # 正確的方式: for word, data in progress.items()
+        count = 0
+        for word, data in progress.items():
+            count += 1
+            # 確認可以取得 error_count
+            err = data.get('error_count', 0)
+            self.assertIsInstance(err, int)
+        
+        # 應該能迭代
+        self.assertGreater(count, 0)

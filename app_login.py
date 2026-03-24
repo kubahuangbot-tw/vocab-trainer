@@ -354,17 +354,25 @@ def main():
                 st.session_state.current_index = 0
     
     # 程度分析 (隱藏版)
+    from storage_sqlite import get_user as sqlite_get_user, get_user_progress, get_weak_words, update_progress, add_wrong_record
     with st.sidebar.expander("📊 程度分析", expanded=False):
-        progress = user_storage.get_progress()
+        # 從 SQLite 取得學習資料
+        sqlite_user = sqlite_get_user(st.session_state.username)
+        user_id = sqlite_user["id"] if sqlite_user else None
+        if user_id:
+            progress = get_user_progress(user_id)
+            weak_words = get_weak_words(user_id, 20)
+        else:
+            progress = {}
+            weak_words = []
         tested_count = len(progress)
-        
         if tested_count > 0:
             # 計算各等級正確率
             level_stats = {1: {'correct': 0, 'total': 0}, 2: {'correct': 0, 'total': 0}, 
                           3: {'correct': 0, 'total': 0}, 4: {'correct': 0, 'total': 0}, 5: {'correct': 0, 'total': 0}}
             
-            for p in progress:
-                word = p.get('word', '')
+            for word, p in progress.items():
+                # word already obtained
                 if word in WORD_LIST:
                     level = WORD_LIST[word].get('level', 3)
                     correct = p.get('correct_count', 0)
@@ -385,30 +393,47 @@ def main():
                     with cols[i]:
                         st.metric(f"{CEFR[level]}", f"{rate:.0f}%", f"{stats['total']}題")
             
-            # 估算整體程度
-            weighted_sum = 0
+            # AI 演算法估算整體程度
+            import math
+            K = 5
+            TARGET_ACC = 0.7
+            level_map = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5}
+            reverse_map = {v: k for k, v in level_map.items()}
+            
+            total_weighted_score = 0
             total_weight = 0
-            for level, stats in level_stats.items():
-                if stats['total'] > 0:
-                    rate = stats['correct'] / stats['total']
-                    weighted_sum += rate * level
-                    total_weight += stats['total']
+            
+            for level in [1, 2, 3, 4, 5]:
+                stats = level_stats.get(level, {})
+                n_i = stats.get('total', 0)
+                c_i = stats.get('correct', 0)
+                
+                if n_i == 0:
+                    continue
+                
+                # Laplace Smoothing
+                adj_p = (c_i + K * TARGET_ACC) / (n_i + K)
+                # Weight by Square Root
+                weight = math.sqrt(n_i)
+                # Level Score
+                level_score = adj_p * weight
+                
+                total_weighted_score += level_score * level
+                total_weight += level_score
             
             if total_weight > 0:
-                avg_level = weighted_sum / total_weight
-                if avg_level < 1.5:
-                    est_level = "A1 (基礎)"
-                elif avg_level < 2.5:
-                    est_level = "A2 (初級)"
-                elif avg_level < 3.5:
-                    est_level = "B1 (中級)"
-                elif avg_level < 4.5:
-                    est_level = "B2 (中高級)"
-                else:
-                    est_level = "C1 (高級)"
+                final_score = total_weighted_score / total_weight
                 
-                st.success(f"📈 估算程度: **{est_level}**")
-                st.caption(f"(根據 {total_weight} 題測試)")
+                # 判斷等級
+                base_level = reverse_map.get(math.floor(final_score), "A1")
+                is_plus = (final_score - math.floor(final_score)) >= 0.5
+                level_suffix = "+" if is_plus else ""
+                
+                level_names = {1: '基礎', 2: '初級', 3: '中級', 4: '中高級', 5: '高級'}
+                est_level = f"{base_level}{level_suffix} ({level_names.get(level_map.get(base_level, 3), '')})"
+                
+                st.success(f"📈 估算程度: **{est_level}** ({final_score:.2f})")
+                st.caption(f"(根據 {tested_count} 題測試)")
         else:
             st.info("尚未有測試紀錄")
     
@@ -525,7 +550,11 @@ def main():
             st.session_state.session_results.append(result)
             
             # 記錄到複習清單 (視為錯誤)
-            user_storage.update_progress(word, q['correct_answer'], False)
+            is_correct = False
+            if user_id:
+                update_progress(user_id, word, q["correct_answer"], is_correct)
+            if user_id:
+                add_wrong_record(user_id, word, q["correct_answer"], is_correct)
             user_storage.mark_tested(word)
             user_storage.add_wrong_record(word, q['correct_answer'], '不知道')
             
@@ -552,7 +581,10 @@ def main():
                 st.session_state.session_results.append(result)
                 
                 # 儲存到用戶資料
-                user_storage.update_progress(word, q['correct_answer'], is_correct)
+                if user_id:
+                    update_progress(user_id, word, q["correct_answer"], is_correct)
+                if user_id:
+                    add_wrong_record(user_id, word, q["correct_answer"], is_correct)
                 user_storage.mark_tested(word)
                 if not is_correct:
                     user_storage.add_wrong_record(word, q['correct_answer'], option)
