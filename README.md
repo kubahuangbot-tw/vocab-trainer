@@ -169,6 +169,49 @@ progress = get_user_progress(user['id'])
 
 https://github.com/kubahuangbot-tw/vocab-trainer
 
+## 已知問題與排除
+
+### passlib 與 bcrypt 5.x 不相容 → 登入 500 錯誤
+
+**症狀：** 使用者無法登入，backend 日誌出現：
+```
+ValueError: password cannot be longer than 72 bytes, truncate manually if necessary
+INFO: "POST /api/auth/login HTTP/1.1" 500 Internal Server Error
+```
+
+**原因：** `passlib 1.7.4` 在執行 bcrypt wrap-bug 偵測時，會傳入一個超過 72 bytes 的測試字串，而 `bcrypt 4.x+` 開始拒絕這種操作並拋出例外，導致整個驗證流程崩潰。
+
+**修復方式：** 在 `backend/auth.py` 中移除 passlib，改直接呼叫 `bcrypt` 套件：
+
+```python
+# 修復前（會炸）
+from passlib.context import CryptContext
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context.verify(plain, hashed)
+
+# 修復後
+import bcrypt as _bcrypt
+_bcrypt.checkpw(plain.encode(), hashed.encode())
+```
+
+### docker restart 不會套用程式碼變更
+
+**症狀：** 修改了原始碼並 `docker restart`，但 container 內的程式碼還是舊的。
+
+**原因：** `docker restart` 只是重啟現有 container，不會重新 build image。Container 內的程式碼是在 `docker build` 時打包進去的。
+
+**修復方式：**
+- 快速修補（不 rebuild image）：用 `docker cp` 把檔案直接複製進 container：
+  ```bash
+  docker cp backend/auth.py vocabtrainer-backend:/app/auth.py
+  docker restart vocabtrainer-backend
+  ```
+- 完整更新：重新 build image：
+  ```bash
+  cd /volume1/botfoler/vocabtrainer_v3
+  docker-compose up -d --build
+  ```
+
 ## 授權
 
 MIT
