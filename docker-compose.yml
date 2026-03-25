@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: vocabtrainer-backend
+    restart: always
+    volumes:
+      - ./data:/app/../data   # shared vocab.db
+    environment:
+      - SECRET_KEY=change-this-to-a-random-string
+    expose:
+      - "8000"
+
+  frontend:
+    build: ./frontend
+    container_name: vocabtrainer-frontend
+    restart: always
+    ports:
+      - "8502:80"
+    depends_on:
+      - backend

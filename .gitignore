@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.env
+
+# Data (sensitive / large)
+data/
+*.db
+*.db-journal
+
+# Logs
+*.log
+ngrok.log
+
+# Backups
+*.bak
+app_backup.py
+
+# Frontend build
+frontend/node_modules/
+frontend/dist/
+
+# Raw source data (large files)
+oxford_5000_raw.json
+words.json.gz
+
+# Misc
+.streamlit/
+nohup.out
