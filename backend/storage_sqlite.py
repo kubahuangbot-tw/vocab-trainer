@@ -8,9 +8,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from contextlib import contextmanager
 
-# 資料目錄 — 指向專案根目錄的 data/ (與舊版共用 DB)
-DATA_DIR = Path(__file__).parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
+# 資料目錄 — 可透過環境變數覆寫（Docker 部署用）
+_default_data_dir = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(_default_data_dir)))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "vocab.db"
 
 

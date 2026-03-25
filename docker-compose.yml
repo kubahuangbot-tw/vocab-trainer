@@ -6,8 +6,9 @@ services:
     container_name: vocabtrainer-backend
     restart: always
     volumes:
-      - ./data:/app/../data   # shared vocab.db
+      - ./data:/data          # vocab.db 存放位置
     environment:
+      - DATA_DIR=/data
       - SECRET_KEY=change-this-to-a-random-string
     expose:
       - "8000"
