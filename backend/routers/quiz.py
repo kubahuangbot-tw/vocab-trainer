@@ -21,6 +21,7 @@ class Question(BaseModel):
     level: int
     cefr: str
     example_sentence: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class QuestionsResponse(BaseModel):
@@ -70,15 +71,17 @@ def get_questions(
         if _has_chinese(d.get("meaning", ""))
     ]
 
-    # Fetch example sentences from DB in bulk
+    # Fetch example sentences and image paths from DB in bulk
     with db.get_db() as conn:
         cursor = conn.cursor()
         placeholders = ','.join('?' * len(words))
         cursor.execute(
-            f"SELECT word, example_sentence FROM words WHERE word IN ({placeholders})",
+            f"SELECT word, example_sentence, image_path FROM words WHERE word IN ({placeholders})",
             words
         )
-        example_map = {row['word']: row['example_sentence'] for row in cursor.fetchall()}
+        rows = cursor.fetchall()
+        example_map = {row['word']: row['example_sentence'] for row in rows}
+        image_map   = {row['word']: row['image_path'] for row in rows}
 
     questions = []
     for word in words:
@@ -94,6 +97,9 @@ def get_questions(
         options = wrong + [meaning]
         random.shuffle(options)
 
+        img_path = image_map.get(word)
+        image_url = f"/word_images/{img_path.split('/')[-1]}" if img_path else None
+
         questions.append(Question(
             word=word,
             options=options,
@@ -101,6 +107,7 @@ def get_questions(
             level=level,
             cefr=CEFR_MAP.get(level, "A1"),
             example_sentence=example_map.get(word) or None,
+            image_url=image_url,
         ))
 
     return QuestionsResponse(questions=questions, total=len(questions))

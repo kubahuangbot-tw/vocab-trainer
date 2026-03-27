@@ -90,6 +90,17 @@
         </button>
       </div>
 
+      <!-- Word image (if available) -->
+      <div v-if="current.image_url" class="mb-4 flex justify-center">
+        <img
+          :src="current.image_url"
+          :alt="current.word"
+          class="rounded-xl object-cover max-h-48 w-full shadow"
+          style="max-width:400px"
+          @error="$event.target.style.display='none'"
+        />
+      </div>
+
       <!-- Example sentence (hidden by default) -->
       <div class="mb-6 text-center">
         <button
