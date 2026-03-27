@@ -1,0 +1,602 @@
+[
+  {
+    "word": "adult",
+    "meaning": "成人",
+    "level": 2,
+    "issue": "等級過低，應為 B2-C1"
+  },
+  {
+    "word": "advantage",
+    "meaning": "優勢",
+    "level": 2,
+    "issue": "等級過低，應為 B2-C1"
+  },
+  {
+    "word": "adventure",
+    "meaning": "冒險",
+    "level": 2,
+    "issue": "等級過低，應為 B2-C1"
+  },
+  {
+    "word": "aftermath",
+    "meaning": "由於重要的（通常是不愉快的）情況而存在的情況",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "ago",
+    "meaning": "用簡單的過去式來表達時間，以顯示在pa中的距離",
+    "level": 1,
+    "issue": "包含英文"
+  },
+  {
+    "word": "aids",
+    "meaning": "由一種名為HIV的病毒引起的嚴重疾病，該病毒攻擊身體的能力",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "aids",
+    "meaning": "由一種名為HIV的病毒引起的嚴重疾病，該病毒攻擊身體的能力",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "anchor",
+    "meaning": "附在繩索或鏈條上的重金屬物體，落在si上",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "application",
+    "meaning": "對某事的正式（通常是書面的）請求，例如工作、做事的許可",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "arguably",
+    "meaning": "當你陳述時使用（通常在比較級或最高級形容詞之前）",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "bench",
+    "meaning": "供兩人或兩人以上使用的長座椅，通常由木頭製成",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "broadband",
+    "meaning": "一種連接互聯網的方式，可讓您接收訊息，包括",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cable",
+    "meaning": "一組用塑膠或橡膠包裹的電線，用於傳輸電力、電話等",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cancer",
+    "meaning": "一種嚴重的疾病，其中細胞生長，也稱為癌症，在體內形成",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cannot",
+    "meaning": "can 的負數；不能",
+    "level": 1,
+    "issue": "包含英文"
+  },
+  {
+    "word": "canvas",
+    "meaning": "一種堅固而沉重的粗糙材料，用於製作帳篷、帆等",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cap",
+    "meaning": "一種尖頂的軟平頂帽（= 前面伸出的硬彎曲部分）",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cent",
+    "meaning": "在許多國家，硬幣和貨幣單位的價值相當於主要貨幣單位的 1%，f",
+    "level": 1,
+    "issue": "包含英文"
+  },
+  {
+    "word": "chain",
+    "meaning": "一系列連接的金屬環，用於拉動或緊固物體；一長",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cheese",
+    "meaning": "一種由牛奶製成的食物，可以是軟的，也可以是硬的，通常是白色的",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "chocolate",
+    "meaning": "由可可豆製成的硬棕色甜食，用於烹飪以增加味道",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cliff",
+    "meaning": "具有非常陡峭側面的高處岩石區域，通常位於大海或海洋的邊緣",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "coal",
+    "meaning": "一種堅硬的黑色礦物，發現於地下並燃燒產生熱量",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cocktail",
+    "meaning": "通常由一種或多種烈酒混合而成的飲料（=烈性酒精 d）",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "cocktail",
+    "meaning": "通常由一種或多種烈酒混合而成的飲料（=烈性酒精 d）",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "comedy",
+    "meaning": "旨在搞笑的戲劇、電影或電視節目，通常有一個幸福的結局",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "competitive",
+    "meaning": "用於描述個人或組織與 ea 競爭的情況",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "condemn",
+    "meaning": "非常強烈地說你認為某件事不好，通常是出於道德原因",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "conference",
+    "meaning": "大型正式會議，通常持續幾天，有問題的人在會議上",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "confusion",
+    "meaning": "一種不確定正在發生什麼事、你該做什麼、正在發生什麼的狀態",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "conventional",
+    "meaning": "傾向於遵循社會普遍所做的或認為可以接受的事情； n",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "conversion",
+    "meaning": "將某物從一種形式、用途或系統改變為另一種形式、用途或系統的行為或過程",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "convert",
+    "meaning": "從一種形式、目的、系統等改變或使某事物發生變化",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cooker",
+    "meaning": "用於烹飪食物的大型設備，包含烤箱和燃氣或電",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cooperative",
+    "meaning": "涉及一起做某事或與他人合作以實現 sha",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "cotton",
+    "meaning": "一種生長在溫暖國家的植物，其種子周圍有柔軟的白色毛髮，",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "cover",
+    "meaning": "放置在另一個物體之上或上方的物體，通常是為了保護它或裝飾它",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "crash",
+    "meaning": "車輛撞上某物的事故，例如另一輛車，usua",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "crop",
+    "meaning": "大量種植的植物，尤其是 foo",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "crystal",
+    "meaning": "具有許多偶數面的一小塊物質，即 f",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "database",
+    "meaning": "儲存在電腦和 CA 中的一組有組織的數據",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "denial",
+    "meaning": "某事不真實或不存在的陳述； th",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "deposit",
+    "meaning": "作為較大 p 的第一部分給出的一筆錢",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "deprive",
+    "meaning": "從（某人）拿走某物並將其遠離；到 d",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "designate",
+    "meaning": "正式地說某人/某物有一個 pa",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "detain",
+    "meaning": "將某人留在官方場所，例如 p",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "diagnosis",
+    "meaning": "發現或識別確切的 ca 的行為",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "direct",
+    "meaning": "沿兩地之間的最直線行駛 w",
+    "level": 2,
+    "issue": "包含英文"
+  },
+  {
+    "word": "dish",
+    "meaning": "一個扁平的淺容器，用於在其中或其中烹飪食物",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "document",
+    "meaning": "gi 的官方文件、書籍或電子文件",
+    "level": 2,
+    "issue": "包含英文"
+  },
+  {
+    "word": "dominant",
+    "meaning": "比 ot 更重要、更強大或更容易注意到",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "donor",
+    "meaning": "贈送 m 禮物的個人或組織",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "downstairs",
+    "meaning": "在低於 o 的房屋或建築物的地板上",
+    "level": 2,
+    "issue": "包含英文"
+  },
+  {
+    "word": "downtown",
+    "meaning": "在、朝向或典型的城市中心，es",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "drawing",
+    "meaning": "使用鉛筆或鋼筆而不是 p 製作的圖片",
+    "level": 2,
+    "issue": "包含英文"
+  },
+  {
+    "word": "drop",
+    "meaning": "形成圓形 s 的極少量液體",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "drought",
+    "meaning": "很少或沒有 r 的很長一段時間",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "economics",
+    "meaning": "研究一個社會如何組織其資金，tr",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "effective",
+    "meaning": "產生想要或預期的結果； p",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "effectively",
+    "meaning": "以產生預期結果或su的方式",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "elephant",
+    "meaning": "一種非常大的動物，有厚厚的灰色皮膚，大個子",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "embarrassment",
+    "meaning": "害羞、不舒服或內疚的感覺；一種感覺o",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "emerge",
+    "meaning": "離開或遠離某物並成為 p",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "employment",
+    "meaning": "工作，尤其是為了賺錢而工作； th",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "encouragement",
+    "meaning": "鼓勵某人做某事的行為； s",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "engineering",
+    "meaning": "將科學知識應用於機器、道路的設計、建造和控制的活動",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "envelope",
+    "meaning": "用於寄信的扁平紙容器，有一部分可以黏下來以關閉它",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "environmental",
+    "meaning": "與人類、動物和植物生存的自然條件有關；與 e 連接",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "equation",
+    "meaning": "顯示兩個金額或值相等的語句，例如 2x + y = 54",
+    "level": 5,
+    "issue": "包含英文"
+  },
+  {
+    "word": "era",
+    "meaning": "一段時期，通常是歷史上的一段時期，由於特定的原因而與其他時期不同",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "ever",
+    "meaning": "用於否定句和疑問句，或帶有 if 的句子，表示“隨時”",
+    "level": 1,
+    "issue": "包含英文"
+  },
+  {
+    "word": "ever",
+    "meaning": "用於否定句和疑問句，或帶有 if 的句子，表示“隨時”",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "fancy",
+    "meaning": "異常複雜，通常是不必要的；旨在給別人留下深刻印象",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "farm",
+    "meaning": "用於種植農作物和/或飼養動物的一塊土地及其上的建築物",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "fiction",
+    "meaning": "一種描述想像中的人物和事件而不是真實的文學類型",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "file",
+    "meaning": "盒子或折疊的卡片，用於將鬆散的紙張整齊地排列在一起",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "firework",
+    "meaning": "一種含有粉末的小型裝置，會燃燒或爆炸並產生明亮的彩色燈光和響亮的聲音",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "firstly",
+    "meaning": "用於介紹您想在演講或文章中提出的一系列要點中的第一個",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "flour",
+    "meaning": "由穀物（尤其是小麥）製成的細白色或棕色粉末，用於烹飪製作麵包",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "fork",
+    "meaning": "有手柄和三個或四個尖頭（稱為尖頭）的工具，用於拾取和進食",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "fourteen",
+    "meaning": "出現在十三之後和十五之前的基數，用羅馬數字表示為 XI",
+    "level": 1,
+    "issue": "包含英文"
+  },
+  {
+    "word": "fridge",
+    "meaning": "一種電氣設備，可以使食物保持低溫以保持新鮮",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "frog",
+    "meaning": "一種皮膚光滑的小動物，既生活在陸地上又生活在水中（=是兩棲動物）",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "funding",
+    "meaning": "用於特定目的的金錢；為此目的提供金錢的行為",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "fundraising",
+    "meaning": "通常透過組織社交活動或為慈善機構或組織籌集資金的活動",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "funeral",
+    "meaning": "一種儀式，通常是宗教儀式，用於埋葬或火化（=焚燒）死者",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "gallery",
+    "meaning": "用於展示藝術作品的房間或建築物，特別是向公眾展示的",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "gate",
+    "meaning": "類似門的屏障，用於關閉建築物外柵欄或牆壁上的開口",
+    "level": 2,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "genre",
+    "meaning": "一種特定類型或風格的文學、藝術、電影或音樂，您可以因其特徵而識別",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "glass",
+    "meaning": "一種堅硬的、通常是透明的物質，例如用於製造窗戶和瓶子",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "govern",
+    "meaning": "合法地控制一個國家或其人民，並負責制定新的法律，組織p",
+    "level": 4,
+    "issue": "包含英文"
+  },
+  {
+    "word": "graphics",
+    "meaning": "特別用於書籍、雜誌、網站製作的設計、圖面或圖片",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "greenhouse",
+    "meaning": "用於種植植物的建築物，尤其是帶有大玻璃窗或塑膠布以進行流通的建築物",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "habit",
+    "meaning": "你經常做的事情，幾乎不假思索，尤其是那些很難阻止的事情 doi",
+    "level": 2,
+    "issue": "包含英文"
+  },
+  {
+    "word": "hat",
+    "meaning": "一件適合頭部的衣服，通常帶有邊緣（=突出的平坦邊緣）",
+    "level": 1,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "headline",
+    "meaning": "用大字印刷的新聞文章的標題，特別是在 n 的首頁頂部",
+    "level": 3,
+    "issue": "包含英文"
+  },
+  {
+    "word": "heating",
+    "meaning": "向房間或建築物供熱的過程；用於執行此操作的系統",
+    "level": 3,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "heighten",
+    "meaning": "如果一種感覺或效果增強，或某種東西增強它，它就會變得更強或增加",
+    "level": 5,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "helmet",
+    "meaning": "一種保護頭部的安全帽，例如由警察、士兵或體育人員佩戴",
+    "level": 4,
+    "issue": "過度解釋"
+  },
+  {
+    "word": "herb",
+    "meaning": "一種植物，其葉子、花或種子用於為食物、藥物或滿足其需求添加味道",
+    "level": 4,
+    "issue": "過度解釋"
+  }
+]
