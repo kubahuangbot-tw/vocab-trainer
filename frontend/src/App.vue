@@ -3,6 +3,7 @@
     <nav v-if="auth.isLoggedIn" class="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between shadow">
       <div class="flex items-center gap-2 font-bold text-lg">
         📚 VocabTrainer
+        <span class="text-xs font-normal bg-indigo-500 px-2 py-0.5 rounded-full">v3.1-release</span>
       </div>
       <div class="flex items-center gap-4 text-sm">
         <router-link to="/" class="hover:text-indigo-200">測驗</router-link>
