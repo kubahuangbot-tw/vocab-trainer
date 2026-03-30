@@ -65,6 +65,16 @@ def init_db():
         except Exception:
             pass
 
+        # 若舊版 DB 沒有 suggested_meaning / image_path 欄位，補上
+        for col, definition in [
+            ("suggested_meaning", "TEXT"),
+            ("image_path", "TEXT"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE words ADD COLUMN {col} {definition}")
+            except Exception:
+                pass
+
         # ========== 用戶學習進度 ==========
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_progress (

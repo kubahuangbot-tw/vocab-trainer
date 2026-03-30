@@ -136,6 +136,39 @@
       <div v-if="answered" class="mt-4">
         <p v-if="lastCorrect" class="text-green-600 font-semibold">✅ 正確！</p>
         <p v-else class="text-red-600 font-semibold">❌ 錯誤！正確答案：{{ current.correct_answer }}</p>
+
+        <!-- Suggest definition -->
+        <div class="mt-3">
+          <button
+            v-if="!showSuggest"
+            @click="showSuggest = true"
+            class="text-xs text-gray-400 hover:text-indigo-500 border border-gray-200 hover:border-indigo-300 rounded-full px-3 py-1 transition"
+          >
+            ✏️ 建議定義
+          </button>
+          <div v-else class="mt-2 space-y-2">
+            <p class="text-xs text-gray-500">目前定義：<span class="text-gray-700">{{ current.correct_answer }}</span></p>
+            <input
+              v-model="suggestText"
+              type="text"
+              placeholder="輸入你認為更好的中文定義..."
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              @keyup.enter="submitSuggest"
+            />
+            <div class="flex gap-2">
+              <button @click="submitSuggest" :disabled="!suggestText.trim() || suggestLoading"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-sm transition">
+                {{ suggestLoading ? '送出中...' : '送出建議' }}
+              </button>
+              <button @click="showSuggest = false; suggestText = ''"
+                class="px-3 py-1.5 border rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition">
+                取消
+              </button>
+            </div>
+            <p v-if="suggestMsg" class="text-xs" :class="suggestOk ? 'text-green-600' : 'text-red-500'">{{ suggestMsg }}</p>
+          </div>
+        </div>
+
         <button @click="next" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg transition font-medium">
           下一題 ➡️
         </button>
@@ -169,6 +202,11 @@ const loading = ref(false)
 const finished = ref(false)
 const ttsLoading = ref(false)
 const showExample = ref(false)
+const showSuggest = ref(false)
+const suggestText = ref('')
+const suggestLoading = ref(false)
+const suggestMsg = ref('')
+const suggestOk = ref(true)
 
 const current = computed(() => questions.value[currentIndex.value] || null)
 const correctCount = computed(() => results.value.filter(r => r.correct).length)
@@ -268,10 +306,33 @@ async function answer(opt) {
   saveState()
 }
 
+async function submitSuggest() {
+  if (!suggestText.value.trim() || suggestLoading.value) return
+  suggestLoading.value = true
+  suggestMsg.value = ''
+  try {
+    await api.post('/words/suggest', {
+      word: current.value.word,
+      suggested_meaning: suggestText.value.trim(),
+    })
+    suggestMsg.value = '已送出，謝謝你的建議！'
+    suggestOk.value = true
+    suggestText.value = ''
+  } catch {
+    suggestMsg.value = '送出失敗，請稍後再試'
+    suggestOk.value = false
+  } finally {
+    suggestLoading.value = false
+  }
+}
+
 function next() {
   answered.value = false
   selectedOpt.value = null
   showExample.value = false
+  showSuggest.value = false
+  suggestText.value = ''
+  suggestMsg.value = ''
   if (currentIndex.value + 1 >= questions.value.length) {
     finished.value = true
     clearState()

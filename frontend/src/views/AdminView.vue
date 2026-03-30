@@ -37,6 +37,33 @@
           </div>
         </div>
       </div>
+
+      <!-- Word management -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold mb-4">🗑️ 單字管理</h2>
+        <div class="flex gap-2 mb-3">
+          <input v-model="wordSearch" type="text" placeholder="搜尋單字..."
+            class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            @keyup.enter="searchWords" />
+          <button @click="searchWords" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm transition">
+            搜尋
+          </button>
+        </div>
+        <div v-if="wordResults.length" class="divide-y max-h-72 overflow-y-auto">
+          <div v-for="w in wordResults" :key="w.id" class="py-2.5 flex items-start gap-2">
+            <div class="flex-1 min-w-0">
+              <span class="font-semibold text-sm">{{ w.word }}</span>
+              <span class="text-xs text-gray-400 ml-2">{{ w.cefr }}</span>
+              <p class="text-xs text-gray-600 truncate">{{ w.meaning }}</p>
+              <p v-if="w.suggested_meaning" class="text-xs text-indigo-600">💡 建議：{{ w.suggested_meaning }}</p>
+            </div>
+            <button @click="deleteWord(w)" class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-200 hover:border-red-400 rounded transition shrink-0">
+              刪除
+            </button>
+          </div>
+        </div>
+        <p v-if="wordDeleteMsg" class="text-xs mt-2" :class="wordDeleteOk ? 'text-green-600' : 'text-red-500'">{{ wordDeleteMsg }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -53,6 +80,10 @@ const form = ref({ username: '', password: '', display_name: '' })
 const creating = ref(false)
 const createMsg = ref('')
 const createOk = ref(true)
+const wordSearch = ref('')
+const wordResults = ref([])
+const wordDeleteMsg = ref('')
+const wordDeleteOk = ref(true)
 
 onMounted(async () => {
   if (!auth.isAdmin) return
@@ -63,6 +94,27 @@ onMounted(async () => {
     loadingUsers.value = false
   }
 })
+
+async function searchWords() {
+  if (!wordSearch.value.trim()) return
+  wordDeleteMsg.value = ''
+  const { data } = await api.get('/words/search', { params: { q: wordSearch.value } })
+  wordResults.value = data
+}
+
+async function deleteWord(w) {
+  if (!confirm(`確定要刪除「${w.word}」嗎？`)) return
+  wordDeleteMsg.value = ''
+  try {
+    await api.delete(`/words/${w.id}`)
+    wordResults.value = wordResults.value.filter(x => x.id !== w.id)
+    wordDeleteMsg.value = `已刪除「${w.word}」`
+    wordDeleteOk.value = true
+  } catch (e) {
+    wordDeleteMsg.value = e.response?.data?.detail || '刪除失敗'
+    wordDeleteOk.value = false
+  }
+}
 
 async function createUser() {
   if (!form.value.username || !form.value.password) return
