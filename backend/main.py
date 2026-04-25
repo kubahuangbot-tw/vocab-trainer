@@ -5,7 +5,7 @@ from pathlib import Path
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
-import storage_sqlite as db
+import storage_postgres as db
 from routers import auth, quiz, users, words
 
 db.init_db()

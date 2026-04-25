@@ -6,7 +6,7 @@ from typing import List, Optional
 import io, sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import storage_sqlite as db
+import storage_postgres as db
 from auth import get_current_user
 from word_list import WORD_LIST
 from trainer import VocabTrainer, DIFFICULTY_LEVELS
@@ -73,11 +73,11 @@ def get_questions(
 
     # Fetch example sentences and image paths from DB in bulk
     with db.get_db() as conn:
-        cursor = conn.cursor()
-        placeholders = ','.join('?' * len(words))
+        import psycopg2.extras
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(
-            f"SELECT word, example_sentence, image_path FROM words WHERE word IN ({placeholders})",
-            words
+            "SELECT word, example_sentence, image_path FROM words WHERE word = ANY(%s)",
+            (list(words),)
         )
         rows = cursor.fetchall()
         example_map = {row['word']: row['example_sentence'] for row in rows}
@@ -98,7 +98,8 @@ def get_questions(
         random.shuffle(options)
 
         img_path = image_map.get(word)
-        image_url = f"/word_images/{img_path.split('/')[-1]}" if img_path else None
+        R2_BASE = os.environ.get("R2_BASE_URL", "https://pub-b6b3766953db4ce69c3b6d781c16e708.r2.dev")
+        image_url = f"{R2_BASE}/{img_path.split('/')[-1]}" if img_path else None
 
         questions.append(Question(
             word=word,

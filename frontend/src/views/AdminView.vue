@@ -64,6 +64,39 @@
         </div>
         <p v-if="wordDeleteMsg" class="text-xs mt-2" :class="wordDeleteOk ? 'text-green-600' : 'text-red-500'">{{ wordDeleteMsg }}</p>
       </div>
+
+      <!-- Removal candidates -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold">🚩 移除候選</h2>
+          <button @click="loadRemovalCandidates" :disabled="loadingCandidates"
+            class="text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50 px-3 py-1.5 rounded-lg transition">
+            {{ loadingCandidates ? '載入中...' : '重新整理' }}
+          </button>
+        </div>
+        <div v-if="!loadingCandidates && removalCandidates.length === 0" class="text-gray-400 text-sm text-center py-4">
+          目前沒有移除候選
+        </div>
+        <div v-if="removalCandidates.length" class="divide-y max-h-72 overflow-y-auto mb-3">
+          <div v-for="w in removalCandidates" :key="w.id" class="py-2.5 flex items-start gap-2">
+            <div class="flex-1 min-w-0">
+              <span class="font-semibold text-sm">{{ w.word }}</span>
+              <span class="text-xs text-gray-400 ml-2">{{ w.cefr }}</span>
+              <span class="ml-2 text-xs text-red-500 font-medium">🚩 {{ w.removal_vote_count }} 票</span>
+              <p class="text-xs text-gray-600 truncate">{{ w.meaning }}</p>
+            </div>
+            <button @click="deleteCandidateWord(w)"
+              class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-200 hover:border-red-400 rounded transition shrink-0">
+              刪除
+            </button>
+          </div>
+        </div>
+        <button v-if="removalCandidates.length > 1" @click="deleteAllCandidates"
+          class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg transition">
+          🗑️ 刪除全部 ({{ removalCandidates.length }})
+        </button>
+        <p v-if="candidateMsg" class="text-xs mt-2" :class="candidateOk ? 'text-green-600' : 'text-red-500'">{{ candidateMsg }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -84,6 +117,10 @@ const wordSearch = ref('')
 const wordResults = ref([])
 const wordDeleteMsg = ref('')
 const wordDeleteOk = ref(true)
+const removalCandidates = ref([])
+const loadingCandidates = ref(false)
+const candidateMsg = ref('')
+const candidateOk = ref(true)
 
 onMounted(async () => {
   if (!auth.isAdmin) return
@@ -93,7 +130,49 @@ onMounted(async () => {
   } finally {
     loadingUsers.value = false
   }
+  loadRemovalCandidates()
 })
+
+async function loadRemovalCandidates() {
+  loadingCandidates.value = true
+  try {
+    const { data } = await api.get('/words/removal-candidates', { params: { min_votes: 1 } })
+    removalCandidates.value = data
+  } finally {
+    loadingCandidates.value = false
+  }
+}
+
+async function deleteCandidateWord(w) {
+  if (!confirm(`確定要刪除「${w.word}」嗎？`)) return
+  candidateMsg.value = ''
+  try {
+    await api.delete(`/words/${w.id}`)
+    removalCandidates.value = removalCandidates.value.filter(x => x.id !== w.id)
+    candidateMsg.value = `已刪除「${w.word}」`
+    candidateOk.value = true
+  } catch (e) {
+    candidateMsg.value = e.response?.data?.detail || '刪除失敗'
+    candidateOk.value = false
+  }
+}
+
+async function deleteAllCandidates() {
+  if (!confirm(`確定要刪除全部 ${removalCandidates.value.length} 個候選單字嗎？`)) return
+  candidateMsg.value = ''
+  let deleted = 0, failed = 0
+  for (const w of [...removalCandidates.value]) {
+    try {
+      await api.delete(`/words/${w.id}`)
+      removalCandidates.value = removalCandidates.value.filter(x => x.id !== w.id)
+      deleted++
+    } catch {
+      failed++
+    }
+  }
+  candidateMsg.value = `已刪除 ${deleted} 個${failed ? `，失敗 ${failed} 個` : ''}`
+  candidateOk.value = failed === 0
+}
 
 async function searchWords() {
   if (!wordSearch.value.trim()) return
@@ -134,3 +213,4 @@ async function createUser() {
   }
 }
 </script>
+

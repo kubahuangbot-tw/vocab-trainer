@@ -1,6 +1,13 @@
 import axios from 'axios'
+import { Capacitor } from '@capacitor/core'
 
-const api = axios.create({ baseURL: '/api' })
+export const serverOrigin = Capacitor.isNativePlatform()
+  ? 'https://vocab.kubahuang.synology.me:7443'
+  : ''
+
+const baseURL = serverOrigin + '/api'
+
+const api = axios.create({ baseURL })
 
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')

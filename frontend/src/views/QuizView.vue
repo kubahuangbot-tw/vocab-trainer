@@ -132,6 +132,16 @@
         </button>
       </div>
 
+      <!-- I don't know -->
+      <div v-if="!answered" class="mt-3 flex justify-center">
+        <button
+          @click="answer('')"
+          class="text-xs text-gray-400 hover:text-orange-500 border border-gray-200 hover:border-orange-300 rounded-full px-4 py-1.5 transition"
+        >
+          🤷 我不知道
+        </button>
+      </div>
+
       <!-- Feedback -->
       <div v-if="answered" class="mt-4">
         <p v-if="lastCorrect" class="text-green-600 font-semibold">✅ 正確！</p>
@@ -167,6 +177,64 @@
             </div>
             <p v-if="suggestMsg" class="text-xs" :class="suggestOk ? 'text-green-600' : 'text-red-500'">{{ suggestMsg }}</p>
           </div>
+        </div>
+
+        <!-- Suggest sentence (only if example sentence exists) -->
+        <div v-if="current.example_sentence" class="mt-2">
+          <button
+            v-if="!showSuggestSentence"
+            @click="showSuggestSentence = true"
+            class="text-xs text-gray-400 hover:text-indigo-500 border border-gray-200 hover:border-indigo-300 rounded-full px-3 py-1 transition"
+          >
+            📝 建議例句
+          </button>
+          <div v-else class="mt-2 space-y-2">
+            <p class="text-xs text-gray-500">目前例句：<span class="text-gray-700 italic">{{ current.example_sentence }}</span></p>
+            <input
+              v-model="suggestSentenceText"
+              type="text"
+              placeholder="輸入你認為更好的例句..."
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              @keyup.enter="submitSuggestSentence"
+            />
+            <div class="flex gap-2">
+              <button @click="submitSuggestSentence" :disabled="!suggestSentenceText.trim() || suggestSentenceLoading"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-sm transition">
+                {{ suggestSentenceLoading ? '送出中...' : '送出建議' }}
+              </button>
+              <button @click="showSuggestSentence = false; suggestSentenceText = ''"
+                class="px-3 py-1.5 border rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition">
+                取消
+              </button>
+            </div>
+            <p v-if="suggestSentenceMsg" class="text-xs" :class="suggestSentenceOk ? 'text-green-600' : 'text-red-500'">{{ suggestSentenceMsg }}</p>
+          </div>
+        </div>
+
+        <!-- Flag image bad (only if image exists) -->
+        <div v-if="current.image_url" class="mt-2">
+          <button
+            v-if="!imageBadDone"
+            @click="submitImageBad"
+            :disabled="imageBadLoading"
+            class="text-xs text-yellow-500 hover:text-yellow-600 border border-yellow-200 hover:border-yellow-300 rounded-full px-3 py-1 transition disabled:opacity-50"
+          >
+            {{ imageBadLoading ? '送出中...' : '🖼️ 建議換圖' }}
+          </button>
+          <p v-if="imageBadMsg" class="text-xs mt-1" :class="imageBadDone ? 'text-yellow-600' : 'text-red-500'">{{ imageBadMsg }}</p>
+        </div>
+
+        <!-- Flag for removal -->
+        <div class="mt-2">
+          <button
+            v-if="!flagDone"
+            @click="submitFlag"
+            :disabled="flagLoading"
+            class="text-xs text-red-400 hover:text-red-500 border border-red-200 hover:border-red-300 rounded-full px-3 py-1 transition disabled:opacity-50"
+          >
+            {{ flagLoading ? '送出中...' : '🚩 建議移除此題' }}
+          </button>
+          <p v-if="flagMsg" class="text-xs mt-1" :class="flagDone ? 'text-orange-500' : 'text-red-500'">{{ flagMsg }}</p>
         </div>
 
         <button @click="next" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg transition font-medium">
@@ -207,6 +275,17 @@ const suggestText = ref('')
 const suggestLoading = ref(false)
 const suggestMsg = ref('')
 const suggestOk = ref(true)
+const showSuggestSentence = ref(false)
+const suggestSentenceText = ref('')
+const suggestSentenceLoading = ref(false)
+const suggestSentenceMsg = ref('')
+const suggestSentenceOk = ref(true)
+const flagLoading = ref(false)
+const flagMsg = ref('')
+const flagDone = ref(false)
+const imageBadLoading = ref(false)
+const imageBadMsg = ref('')
+const imageBadDone = ref(false)
 
 const current = computed(() => questions.value[currentIndex.value] || null)
 const correctCount = computed(() => results.value.filter(r => r.correct).length)
@@ -326,6 +405,60 @@ async function submitSuggest() {
   }
 }
 
+async function submitSuggestSentence() {
+  if (!suggestSentenceText.value.trim() || suggestSentenceLoading.value) return
+  suggestSentenceLoading.value = true
+  suggestSentenceMsg.value = ''
+  try {
+    await api.post('/words/suggest-sentence', {
+      word: current.value.word,
+      suggested_sentence: suggestSentenceText.value.trim(),
+    })
+    suggestSentenceMsg.value = '已送出，謝謝你的建議！'
+    suggestSentenceOk.value = true
+    suggestSentenceText.value = ''
+  } catch {
+    suggestSentenceMsg.value = '送出失敗，請稍後再試'
+    suggestSentenceOk.value = false
+  } finally {
+    suggestSentenceLoading.value = false
+  }
+}
+
+async function submitImageBad() {
+  if (imageBadLoading.value || imageBadDone.value) return
+  imageBadLoading.value = true
+  imageBadMsg.value = ''
+  try {
+    const res = await api.post('/words/vote-image-bad', { word: current.value.word })
+    imageBadMsg.value = res.data.already_voted ? '你已經回報過了' : '已送出，感謝回報！'
+    if (!res.data.already_voted) imageBadDone.value = true
+  } catch {
+    imageBadMsg.value = '送出失敗，請稍後再試'
+  } finally {
+    imageBadLoading.value = false
+  }
+}
+
+async function submitFlag() {
+  if (flagLoading.value || flagDone.value) return
+  flagLoading.value = true
+  flagMsg.value = ''
+  try {
+    const res = await api.post('/words/suggest-remove', { word: current.value.word })
+    if (res.data.already_voted) {
+      flagMsg.value = '你已經投過票了'
+    } else {
+      flagMsg.value = '已送出，感謝回報！'
+      flagDone.value = true
+    }
+  } catch {
+    flagMsg.value = '送出失敗，請稍後再試'
+  } finally {
+    flagLoading.value = false
+  }
+}
+
 function next() {
   answered.value = false
   selectedOpt.value = null
@@ -333,6 +466,15 @@ function next() {
   showSuggest.value = false
   suggestText.value = ''
   suggestMsg.value = ''
+  showSuggestSentence.value = false
+  suggestSentenceText.value = ''
+  suggestSentenceMsg.value = ''
+  flagLoading.value = false
+  flagMsg.value = ''
+  flagDone.value = false
+  imageBadLoading.value = false
+  imageBadMsg.value = ''
+  imageBadDone.value = false
   if (currentIndex.value + 1 >= questions.value.length) {
     finished.value = true
     clearState()
