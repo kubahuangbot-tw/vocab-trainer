@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import storage_postgres as db
 from auth import get_current_user
-from trainer import VocabTrainer, DIFFICULTY_LEVELS
 
 router = APIRouter(prefix="/api/quiz", tags=["quiz"])
 
@@ -41,15 +40,16 @@ class AnswerResponse(BaseModel):
     your_answer: str
 
 
-CEFR_MAP = {1: "A1", 2: "A2", 3: "B1", 4: "B2", 5: "C1", 6: "C2"}
+CEFR_LEVEL = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6}
+CEFR_MAP   = {v: k for k, v in CEFR_LEVEL.items()}
 
 
 def _has_chinese(meaning: str) -> bool:
-    return bool(meaning) and any('\u4e00' <= c <= '\u9fff' for c in meaning)
+    return bool(meaning) and any('一' <= c <= '鿿' for c in meaning)
 
 
 def _load_all_meanings():
-    """Load all Chinese meanings from DB for distractor pool."""
+    """Load all Chinese meanings from DB for distractor pool (cached at startup)."""
     try:
         with db.get_db() as conn:
             cursor = conn.cursor()
@@ -58,7 +58,6 @@ def _load_all_meanings():
     except Exception:
         return []
 
-# Cache at startup from DB — refreshed on backend restart
 _ALL_MEANINGS = _load_all_meanings()
 
 
@@ -67,52 +66,43 @@ def get_questions(
     count: int = 10,
     difficulty_min: str = "A1",
     difficulty_max: str = "C1",
-    mode: str = "random",
+    mode: str = "mixed",
     current_user: dict = Depends(get_current_user),
 ):
     user_id = current_user.get("user_id")
+    min_level = CEFR_LEVEL.get(difficulty_min.upper(), 1)
+    max_level = CEFR_LEVEL.get(difficulty_max.upper(), 6)
 
-    difficulty = f"{difficulty_min}-{difficulty_max}"
-    trainer = VocabTrainer(user_id=user_id)
+    # SRS-aware word selection
+    word_rows = db.get_quiz_words(
+        user_id=user_id, count=count,
+        min_level=min_level, max_level=max_level,
+        mode=mode
+    )
 
-    words = trainer.select_words(count=count, mode=mode, difficulty=difficulty, review_ratio=0.3)
-
-    # Fetch all word data from DB in bulk (meaning, difficulty, example, image)
-    with db.get_db() as conn:
-        import psycopg2.extras
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(
-            "SELECT word, meaning, difficulty, example_sentence, image_path FROM words WHERE word = ANY(%s)",
-            (list(words),)
-        )
-        rows = cursor.fetchall()
-        meaning_map  = {row['word']: row['meaning'] for row in rows}
-        level_map    = {row['word']: row['difficulty'] or 1 for row in rows}
-        example_map  = {row['word']: row['example_sentence'] for row in rows}
-        image_map    = {row['word']: row['image_path'] for row in rows}
+    R2_BASE = os.environ.get("R2_BASE_URL", "https://pub-b6b3766953db4ce69c3b6d781c16e708.r2.dev")
 
     questions = []
-    for word in words:
-        meaning = meaning_map.get(word, "")
+    for row in word_rows:
+        meaning = row.get("meaning", "")
         if not _has_chinese(meaning):
             continue
 
-        level = level_map.get(word, 1)
+        level = row.get("difficulty") or 1
         wrong = random.sample([m for m in _ALL_MEANINGS if m != meaning], min(3, len(_ALL_MEANINGS) - 1))
         options = wrong + [meaning]
         random.shuffle(options)
 
-        img_path = image_map.get(word)
-        R2_BASE = os.environ.get("R2_BASE_URL", "https://pub-b6b3766953db4ce69c3b6d781c16e708.r2.dev")
+        img_path  = row.get("image_path")
         image_url = f"{R2_BASE}/{img_path.split('/')[-1]}" if img_path else None
 
         questions.append(Question(
-            word=word,
+            word=row["word"],
             options=options,
             correct_answer=meaning,
             level=level,
             cefr=CEFR_MAP.get(level, "A1"),
-            example_sentence=example_map.get(word) or None,
+            example_sentence=row.get("example_sentence") or None,
             image_url=image_url,
         ))
 
@@ -141,6 +131,12 @@ def submit_answer(
         correct_answer=body.correct_answer,
         your_answer=body.selected,
     )
+
+
+@router.get("/mastery", summary="User mastery stats by CEFR")
+def get_mastery(current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("user_id")
+    return db.get_mastery_stats(user_id)
 
 
 @router.get("/tts/{word}")

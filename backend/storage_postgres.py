@@ -202,28 +202,33 @@ def get_user_progress(user_id):
         return {row['word']: dict(row) for row in cur.fetchall()}
 
 
-def calculate_time_weight(last_error_time):
-    if not last_error_time:
-        return 1.0
-    try:
-        if isinstance(last_error_time, str):
-            error_date = datetime.strptime(last_error_time, '%Y-%m-%d %H:%M:%S')
-        else:
-            error_date = last_error_time
-    except Exception:
-        return 1.0
-    days_old = (datetime.now() - error_date).days
-    if days_old <= 7:
-        return 2.0
-    elif days_old <= 14:
-        return 1.5
-    elif days_old <= 30:
-        return 1.0
-    else:
-        return 0.5
+# ── SRS interval table (streak → days until next review) ─────────────────────
+_SRS_INTERVALS = {0: 0, 1: 1, 2: 3, 3: 7, 4: 14}
+_SRS_MASTERED_STREAK = 5      # streak >= 5 → mastered (30-day interval)
+_SRS_MASTERED_INTERVAL = 30
+_WEIGHT_CORRECT_DECAY = 0.75  # answer correct → weight * 0.75
+_WEIGHT_WRONG_BOOST   = 2.0   # answer wrong   → weight * 2.0
+_WEIGHT_MIN = 1.0
+_WEIGHT_MAX = 10.0
+
+
+def _srs_next_review(streak: int) -> datetime:
+    days = _SRS_INTERVALS.get(streak, _SRS_MASTERED_INTERVAL if streak >= _SRS_MASTERED_STREAK else 14)
+    return datetime.now() + timedelta(days=days)
 
 
 def update_progress(user_id, word, meaning, correct=True):
+    """
+    SRS-based progress update.
+
+    Correct answer:
+      streak++, weight decays by 25% (min 1.0),
+      next_review pushed out by SRS interval.
+
+    Wrong answer:
+      streak resets to 0, weight doubles (max 10.0),
+      next_review = now (show again in this session / next day).
+    """
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT id FROM words WHERE word = %s", (word,))
@@ -231,60 +236,178 @@ def update_progress(user_id, word, meaning, correct=True):
         if not row:
             return
         word_id = row['id']
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.now()
+        now_str = now.strftime('%Y-%m-%d %H:%M:%S')
 
         cur.execute(
-            "SELECT id, correct_count, error_count, weight, last_error FROM user_progress WHERE user_id = %s AND word_id = %s",
+            "SELECT id, correct_count, error_count, weight, streak, last_error FROM user_progress WHERE user_id = %s AND word_id = %s",
             (user_id, word_id)
         )
         existing = _fetchone_dict(cur)
 
         if existing:
             correct_count = existing['correct_count'] + (1 if correct else 0)
-            error_count = existing['error_count'] + (0 if correct else 1)
-            new_weight = existing['weight']
-            if not correct:
-                time_weight = calculate_time_weight(existing['last_error'])
-                new_weight = max(1, existing['weight'] * time_weight)
+            error_count   = existing['error_count']   + (0 if correct else 1)
+            old_streak    = existing.get('streak') or 0
+            old_weight    = float(existing.get('weight') or 1.0)
+
+            if correct:
+                new_streak = old_streak + 1
+                new_weight = max(_WEIGHT_MIN, old_weight * _WEIGHT_CORRECT_DECAY)
+            else:
+                new_streak = 0
+                new_weight = min(_WEIGHT_MAX, old_weight * _WEIGHT_WRONG_BOOST)
+
+            next_review = _srs_next_review(new_streak)
+
             cur.execute("""
                 UPDATE user_progress
-                SET correct_count=%s, error_count=%s, weight=%s, last_reviewed=%s, last_error=%s
+                SET correct_count=%s, error_count=%s, weight=%s, streak=%s,
+                    last_reviewed=%s, last_error=%s, next_review=%s
                 WHERE user_id=%s AND word_id=%s
             """, (
-                correct_count, error_count, new_weight, now,
-                now if not correct else existing['last_error'],
+                correct_count, error_count, round(new_weight, 4), new_streak,
+                now_str,
+                now_str if not correct else existing['last_error'],
+                next_review,
                 user_id, word_id
             ))
-            if not correct:
-                cur.execute(
-                    "INSERT INTO error_details (user_id, word_id, your_answer, created_at) VALUES (%s,%s,%s,%s)",
-                    (user_id, word_id, 'incorrect', now)
-                )
         else:
-            weight = 1.0 if correct else 3.0
+            # First time seeing this word
+            new_streak  = 1 if correct else 0
+            new_weight  = _WEIGHT_MIN if correct else _WEIGHT_WRONG_BOOST
+            next_review = _srs_next_review(new_streak)
             cur.execute("""
-                INSERT INTO user_progress (user_id, word_id, correct_count, error_count, weight, last_reviewed, last_error)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)
-            """, (user_id, word_id, 1 if correct else 0, 0 if correct else 1, weight, now, now if not correct else None))
-            if not correct:
-                cur.execute(
-                    "INSERT INTO error_details (user_id, word_id, your_answer, created_at) VALUES (%s,%s,%s,%s)",
-                    (user_id, word_id, 'incorrect', now)
-                )
+                INSERT INTO user_progress
+                  (user_id, word_id, correct_count, error_count, weight, streak,
+                   last_reviewed, last_error, next_review)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                user_id, word_id,
+                1 if correct else 0, 0 if correct else 1,
+                round(new_weight, 4), new_streak,
+                now_str, now_str if not correct else None,
+                next_review
+            ))
+
+        if not correct:
+            cur.execute(
+                "INSERT INTO error_details (user_id, word_id, your_answer, created_at) VALUES (%s,%s,%s,%s)",
+                (user_id, word_id, 'incorrect', now_str)
+            )
 
 
 def get_weak_words(user_id, top_n=20):
+    """
+    Return words due for review (next_review <= NOW), excluding mastered words.
+    Ordered by weight DESC (most problematic first).
+    """
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT w.word, w.meaning, w.cefr, up.error_count, up.weight, up.last_error
+            SELECT w.word, w.meaning, w.cefr, up.error_count, up.weight, up.streak
             FROM user_progress up
             JOIN words w ON up.word_id = w.id
-            WHERE up.user_id = %s AND up.error_count > 0
-            ORDER BY up.weight DESC, up.last_error DESC
+            WHERE up.user_id = %s
+              AND up.error_count > 0
+              AND (up.next_review IS NULL OR up.next_review <= NOW())
+              AND up.streak < %s
+            ORDER BY up.weight DESC
             LIMIT %s
-        """, (user_id, top_n))
+        """, (user_id, _SRS_MASTERED_STREAK, top_n))
         return [(row['word'], {'meaning': row['meaning'], 'correct_count': row['error_count']}) for row in cur.fetchall()]
+
+
+def get_quiz_words(user_id, count=10, min_level=1, max_level=6, mode="mixed"):
+    """
+    Select words for a quiz session using SRS logic.
+
+    Modes:
+      "weak"  – only due-for-review words (next_review <= NOW, streak < mastered)
+      "new"   – only unseen words (not in user_progress)
+      "mixed" – 70% due-for-review + 30% new (falls back if either pool is small)
+
+    Returns list of word dicts: {word, meaning, cefr, difficulty, example_sentence, image_path}
+    """
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        base_filter = "w.difficulty BETWEEN %s AND %s AND w.meaning IS NOT NULL AND w.meaning != ''"
+
+        def fetch_due(limit):
+            cur.execute(f"""
+                SELECT w.word, w.meaning, w.cefr, w.difficulty, w.example_sentence, w.image_path,
+                       up.weight, up.streak
+                FROM user_progress up
+                JOIN words w ON up.word_id = w.id
+                WHERE up.user_id = %s
+                  AND {base_filter}
+                  AND (up.next_review IS NULL OR up.next_review <= NOW())
+                  AND up.streak < %s
+                ORDER BY up.weight DESC
+                LIMIT %s
+            """, (user_id, min_level, max_level, _SRS_MASTERED_STREAK, limit))
+            return [dict(r) for r in cur.fetchall()]
+
+        def fetch_new(limit):
+            cur.execute(f"""
+                SELECT w.word, w.meaning, w.cefr, w.difficulty, w.example_sentence, w.image_path
+                FROM words w
+                WHERE {base_filter}
+                  AND NOT EXISTS (
+                      SELECT 1 FROM user_progress up
+                      WHERE up.user_id = %s AND up.word_id = w.id
+                  )
+                ORDER BY RANDOM()
+                LIMIT %s
+            """, (min_level, max_level, user_id, limit))
+            return [dict(r) for r in cur.fetchall()]
+
+        if mode == "weak":
+            words = fetch_due(count)
+            if len(words) < count:
+                words += fetch_new(count - len(words))
+
+        elif mode == "new":
+            words = fetch_new(count)
+            if len(words) < count:
+                words += fetch_due(count - len(words))
+
+        else:  # mixed: 70% due + 30% new
+            due_count = max(1, int(count * 0.7))
+            new_count = count - due_count
+            due_words = fetch_due(due_count)
+            new_words = fetch_new(new_count)
+            # If one pool is small, fill from the other
+            if len(due_words) < due_count:
+                new_words += fetch_new(due_count - len(due_words) + new_count)
+                new_words = new_words[:count - len(due_words)]
+            elif len(new_words) < new_count:
+                due_words += fetch_due(new_count - len(new_words) + due_count)
+                due_words = due_words[:count - len(new_words)]
+            words = due_words + new_words
+
+        import random
+        random.shuffle(words)
+        return words[:count]
+
+
+def get_mastery_stats(user_id):
+    """Return counts: new / learning / review_due / mastered per CEFR level."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT
+                w.cefr,
+                COUNT(*) FILTER (WHERE up.id IS NULL)                                AS new_words,
+                COUNT(*) FILTER (WHERE up.streak < %s AND up.next_review > NOW())    AS learning,
+                COUNT(*) FILTER (WHERE up.streak < %s AND (up.next_review IS NULL OR up.next_review <= NOW())) AS due,
+                COUNT(*) FILTER (WHERE up.streak >= %s)                              AS mastered
+            FROM words w
+            LEFT JOIN user_progress up ON up.word_id = w.id AND up.user_id = %s
+            GROUP BY w.cefr ORDER BY w.cefr
+        """, (_SRS_MASTERED_STREAK, _SRS_MASTERED_STREAK, _SRS_MASTERED_STREAK, user_id))
+        return [dict(r) for r in cur.fetchall()]
 
 
 def add_wrong_record(user_id, word, meaning, your_answer):
