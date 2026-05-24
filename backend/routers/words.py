@@ -72,10 +72,9 @@ def suggest_meaning(body: SuggestRequest, current_user: dict = Depends(get_curre
 @router.post("/suggest-remove")
 def suggest_remove(body: SuggestRemoveRequest, current_user: dict = Depends(get_current_user)):
     """用戶建議移除某個單字題目"""
-    user = db.get_user(current_user["username"])
-    if not user:
-        raise HTTPException(status_code=404, detail="用戶不存在")
-    user_id = user["id"]
+    user_id = current_user.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="無法識別用戶")
     with db.get_db() as conn:
         cur = conn.cursor()
         # Check word exists
@@ -115,10 +114,9 @@ def suggest_sentence(body: SuggestSentenceRequest, current_user: dict = Depends(
 @router.post("/vote-image-bad")
 def vote_image_bad(body: SuggestRemoveRequest, current_user: dict = Depends(get_current_user)):
     """用戶投票圖片不符合"""
-    user = db.get_user(current_user["username"])
-    if not user:
-        raise HTTPException(status_code=404, detail="用戶不存在")
-    user_id = user["id"]
+    user_id = current_user.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="無法識別用戶")
     with db.get_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT id FROM words WHERE word=%s", (body.word,))

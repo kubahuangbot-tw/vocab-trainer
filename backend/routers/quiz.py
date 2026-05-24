@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import storage_postgres as db
 from auth import get_current_user
-from word_list import WORD_LIST
 from trainer import VocabTrainer, DIFFICULTY_LEVELS
 
 router = APIRouter(prefix="/api/quiz", tags=["quiz"])
@@ -49,6 +48,20 @@ def _has_chinese(meaning: str) -> bool:
     return bool(meaning) and any('\u4e00' <= c <= '\u9fff' for c in meaning)
 
 
+def _load_all_meanings():
+    """Load all Chinese meanings from DB for distractor pool."""
+    try:
+        with db.get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT meaning FROM words WHERE meaning IS NOT NULL AND meaning != ''")
+            return [row[0] for row in cursor.fetchall() if _has_chinese(row[0])]
+    except Exception:
+        return []
+
+# Cache at startup from DB — refreshed on backend restart
+_ALL_MEANINGS = _load_all_meanings()
+
+
 @router.get("/questions", response_model=QuestionsResponse)
 def get_questions(
     count: int = 10,
@@ -57,43 +70,35 @@ def get_questions(
     mode: str = "random",
     current_user: dict = Depends(get_current_user),
 ):
-    user = db.get_user(current_user["username"])
-    user_id = user["id"] if user else None
+    user_id = current_user.get("user_id")
 
     difficulty = f"{difficulty_min}-{difficulty_max}"
     trainer = VocabTrainer(user_id=user_id)
 
     words = trainer.select_words(count=count, mode=mode, difficulty=difficulty, review_ratio=0.3)
 
-    # Build all Chinese meanings for wrong options
-    all_meanings = [
-        d["meaning"] for d in WORD_LIST.values()
-        if _has_chinese(d.get("meaning", ""))
-    ]
-
-    # Fetch example sentences and image paths from DB in bulk
+    # Fetch all word data from DB in bulk (meaning, difficulty, example, image)
     with db.get_db() as conn:
         import psycopg2.extras
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(
-            "SELECT word, example_sentence, image_path FROM words WHERE word = ANY(%s)",
+            "SELECT word, meaning, difficulty, example_sentence, image_path FROM words WHERE word = ANY(%s)",
             (list(words),)
         )
         rows = cursor.fetchall()
-        example_map = {row['word']: row['example_sentence'] for row in rows}
-        image_map   = {row['word']: row['image_path'] for row in rows}
+        meaning_map  = {row['word']: row['meaning'] for row in rows}
+        level_map    = {row['word']: row['difficulty'] or 1 for row in rows}
+        example_map  = {row['word']: row['example_sentence'] for row in rows}
+        image_map    = {row['word']: row['image_path'] for row in rows}
 
     questions = []
     for word in words:
-        if word not in WORD_LIST:
-            continue
-        data = WORD_LIST[word]
-        meaning = data.get("meaning", "")
+        meaning = meaning_map.get(word, "")
         if not _has_chinese(meaning):
             continue
 
-        level = data.get("level", 1)
-        wrong = random.sample([m for m in all_meanings if m != meaning], min(3, len(all_meanings) - 1))
+        level = level_map.get(word, 1)
+        wrong = random.sample([m for m in _ALL_MEANINGS if m != meaning], min(3, len(_ALL_MEANINGS) - 1))
         options = wrong + [meaning]
         random.shuffle(options)
 

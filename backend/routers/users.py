@@ -5,7 +5,7 @@ from typing import List, Optional
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import storage_sqlite as db
+import storage_postgres as db
 from auth import get_current_user, hash_password
 from word_list import WORD_LIST
 

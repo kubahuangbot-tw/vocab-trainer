@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import storage_sqlite as db
+import storage_postgres as db
 from auth import verify_password, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -28,7 +28,7 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用戶名或密碼錯誤")
 
     is_admin = bool(user.get("is_admin", False))
-    token = create_access_token({"sub": user["username"], "is_admin": is_admin})
+    token = create_access_token({"sub": user["username"], "is_admin": is_admin, "user_id": user["id"]})
     return LoginResponse(
         access_token=token,
         token_type="bearer",

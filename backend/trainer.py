@@ -34,7 +34,7 @@ class VocabTrainer:
     def __init__(self, user_id=None):
         # 嘗試使用 SQLite，失敗則回退到 CSV
         try:
-            import storage_sqlite as sqlite_storage
+            import storage_postgres as sqlite_storage
             self.use_sqlite = True
             self.sqlite_storage = sqlite_storage
             self.user_id = user_id

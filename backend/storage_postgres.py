@@ -8,25 +8,42 @@ from contextlib import contextmanager
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://postgres.wzxqbvrtrjgndfhxxyjw:LFHGDXKg22rnSDPO@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require"
+    "postgresql://postgres.wzxqbvrtrjgndfhxxyjw:LFHGDXKg22rnSDPO@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
 )
+
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None or _pool.closed:
+        _pool = psycopg2.pool.ThreadedConnectionPool(2, 10, DATABASE_URL)
+    return _pool
 
 
 @contextmanager
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL)
+    pool = _get_pool()
+    conn = pool.getconn()
     conn.autocommit = False
     try:
         yield conn
         conn.commit()
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        pool.putconn(conn, close=True)
+        conn = None
         raise
     finally:
-        conn.close()
+        if conn is not None:
+            pool.putconn(conn)
 
 
 def _fetchone_dict(cursor):

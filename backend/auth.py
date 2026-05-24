@@ -42,4 +42,4 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     username = payload.get("sub")
     if not username:
         raise HTTPException(status_code=401, detail="無效的 token")
-    return {"username": username, "is_admin": payload.get("is_admin", False)}
+    return {"username": username, "is_admin": payload.get("is_admin", False), "user_id": payload.get("user_id")}

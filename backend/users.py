@@ -5,9 +5,9 @@ import hashlib
 import sys
 from pathlib import Path
 
-# 確保可以 import storage_sqlite
+# 確保可以 import storage_postgres
 sys.path.insert(0, str(Path(__file__).parent))
-from storage_sqlite import get_db, create_user as sqlite_create_user, get_user as sqlite_get_user
+from storage_postgres import get_db, create_user as sqlite_create_user, get_user as sqlite_get_user
 
 
 def hash_password(password):
@@ -46,29 +46,29 @@ def create_user(username, password, email=None, is_admin=False):
 
 def get_user_data_dir(username):
     """取得用戶資料目錄"""
-    from storage_sqlite import get_db
+    from storage_postgres import get_db
     return Path(__file__).parent / "data"
 
 
 def list_users():
     """列出所有用戶"""
-    from storage_sqlite import get_db
+    from storage_postgres import get_db
     with get_db() as conn:
-        cursor = conn.cursor()
+        import psycopg2.extras
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT id, username, display_name, created_at FROM users ORDER BY id")
         return [dict(row) for row in cursor.fetchall()]
 
 
 def delete_user(username):
     """刪除用戶"""
-    from storage_sqlite import get_db
+    from storage_postgres import get_db
     user = sqlite_get_user(username)
     if not user:
         return False, "用戶不存在"
     
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-        conn.commit()
+        cursor.execute("DELETE FROM users WHERE username = %s", (username,))
     
     return True, f"用戶 {username} 已刪除"

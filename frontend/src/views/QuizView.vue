@@ -375,14 +375,11 @@ async function answer(opt) {
   answered.value = true
   selectedOpt.value = opt
   const q = current.value
-  const { data } = await api.post('/quiz/answer', {
-    word: q.word,
-    selected: opt,
-    correct_answer: q.correct_answer,
-  })
-  lastCorrect.value = data.correct
-  results.value.push(data)
+  lastCorrect.value = (opt === q.correct_answer)
+  results.value.push({ correct: lastCorrect.value, word: q.word, correct_answer: q.correct_answer, your_answer: opt })
   saveState()
+  // Record in background — don't await, UI already shows correct result
+  api.post('/quiz/answer', { word: q.word, selected: opt, correct_answer: q.correct_answer }).catch(() => {})
 }
 
 async function submitSuggest() {
