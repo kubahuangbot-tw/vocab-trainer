@@ -36,7 +36,7 @@ OFFSET = int(sys.argv[_off_idx + 1]) if _off_idx else 0
 
 ADMIN_USER    = os.environ.get("VOCAB_ADMIN_USER", "admin")
 ADMIN_PASS    = os.environ.get("VOCAB_ADMIN_PASS", "")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCRKOilVyIx7f_Ef94Xfh5_B5Vjl45gLxQ")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL  = "gemini-2.5-flash"
 
 

@@ -27,7 +27,10 @@ FORCE_SENTENCES = "--force-sentences" in sys.argv  # 強制跑例句審核（不
 API_BASE       = os.environ.get("VOCAB_API_BASE", "http://192.168.1.106:8501")
 ADMIN_USER     = os.environ.get("VOCAB_ADMIN_USER", "admin")
 ADMIN_PASS     = os.environ.get("VOCAB_ADMIN_PASS", "")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCRKOilVyIx7f_Ef94Xfh5_B5Vjl45gLxQ")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+if not GEMINI_API_KEY:
+    print("❌ 請設定 GEMINI_API_KEY 環境變數")
+    sys.exit(1)
 GEMINI_MODEL   = "gemini-2.5-flash"
 
 SENTENCE_BATCH = 100   # 每週審核例句數量
