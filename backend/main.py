@@ -11,7 +11,9 @@ from routers import auth, quiz, users, words
 db.init_db()
 db.create_preferences_table()
 
-app = FastAPI(title="VocabTrainer API", version="3.0.0")
+APP_VERSION = "3.2.0"
+
+app = FastAPI(title="VocabTrainer API", version=APP_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,3 +38,8 @@ app.mount("/word_images", StaticFiles(directory=str(_images_dir)), name="word_im
 @app.get("/api/health")
 def health():
     return {"status": "ok", "words": db.get_word_count()}
+
+
+@app.get("/api/version")
+def version():
+    return {"version": APP_VERSION}
